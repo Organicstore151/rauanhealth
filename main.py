@@ -1,5 +1,6 @@
 import os
 import json
+import openai
 from datetime import datetime
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
@@ -23,15 +24,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 # Обработка обычных сообщений
+# Команда /morning или кнопка "Утро" — с GPT
 async def morning(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "☀️ Доброе утро, Рауан!\n"
-        "Вот 3 простых шага для запуска пищеварения и энергии:\n\n"
-        "1. 💧 Выпей стакан тёплой воды (можно с лимоном)\n"
-        "2. 🍽️ Завтрак — овсянка, гречка или яйца + овощи\n"
-        "3. 🤸 Разминка 5 минут: наклоны, «велосипед» и лёгкие приседания\n\n"
-        "Пусть день будет лёгким и продуктивным! 🔥"
+    await update.message.reply_text("⏳ Думаю над рекомендациями для тебя...")
+
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # Или "gpt-4", если у тебя включено
+        messages=[
+            {"role": "system", "content": "Ты — дружелюбный бот для утреннего здоровья. Дай советы на день: что выпить, что поесть на завтрак, как размяться. Кратко, конкретно и по-человечески."},
+            {"role": "user", "content": "Утро. Что мне делать сегодня, чтобы зарядиться энергией и улучшить пищеварение?"}
+        ]
     )
+
+    reply = response.choices[0].message["content"]
+    await update.message.reply_text(reply)
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.lower()
 
@@ -69,6 +76,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
        
 # Запуск приложения
 app = ApplicationBuilder().token(os.environ["BOT_TOKEN"]).build()
+openai.api_key = os.environ["OPENAI_API_KEY"]
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 app.run_polling()

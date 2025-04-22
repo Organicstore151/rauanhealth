@@ -23,6 +23,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 # Обработка обычных сообщений
+async def morning(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "☀️ Доброе утро, Рауан!\n"
+        "Вот 3 простых шага для запуска пищеварения и энергии:\n\n"
+        "1. 💧 Выпей стакан тёплой воды (можно с лимоном)\n"
+        "2. 🍽️ Завтрак — овсянка, гречка или яйца + овощи\n"
+        "3. 🤸 Разминка 5 минут: наклоны, «велосипед» и лёгкие приседания\n\n"
+        "Пусть день будет лёгким и продуктивным! 🔥"
+    )
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.lower()
 

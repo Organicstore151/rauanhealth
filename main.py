@@ -48,9 +48,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     sheet.append_row(row)
     await update.message.reply_text("✅ Данные записаны по колонкам!")
+    # Команда /утро — утренние рекомендации
+async def morning(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "☀️ Доброе утро, Рауан!\n"
+        "Вот 3 простых шага для запуска пищеварения и энергии:\n\n"
+        "1. 💧 Выпей стакан тёплой воды (можно с лимоном)\n"
+        "2. 🍽️ Завтрак — овсянка, гречка или яйца + овощи\n"
+        "3. 🤸 Разминка 5 минут: наклоны, «велосипед» и лёгкие приседания\n\n"
+        "Пусть день будет лёгким и продуктивным! 🔥"
+    )
 
 # Запуск приложения
 app = ApplicationBuilder().token(os.environ["BOT_TOKEN"]).build()
 app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("утро", morning))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 app.run_polling()

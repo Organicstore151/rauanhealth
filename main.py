@@ -1,6 +1,6 @@
 import os
 import json
-import openai
+from openai import OpenAI
 from datetime import datetime
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
@@ -24,19 +24,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 # Обработка обычных сообщений
-# Команда /morning или кнопка "Утро" — с GPT
 async def morning(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("⏳ Думаю над рекомендациями для тебя...")
+    await update.message.reply_text("⏳ Думаю над рекомендациями...")
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",  # Или "gpt-4", если у тебя включено
+    response = openai_client.chat.completions.create(
+        model="gpt-3.5-turbo",  # или "gpt-4" — если у тебя есть доступ
         messages=[
-            {"role": "system", "content": "Ты — дружелюбный бот для утреннего здоровья. Дай советы на день: что выпить, что поесть на завтрак, как размяться. Кратко, конкретно и по-человечески."},
-            {"role": "user", "content": "Утро. Что мне делать сегодня, чтобы зарядиться энергией и улучшить пищеварение?"}
+            {
+                "role": "system",
+                "content": "Ты — дружелюбный бот-помощник по здоровью. Утром ты даёшь человеку советы: что выпить, что поесть, как размяться. Пиши кратко, понятно, дружелюбно, с эмодзи."
+            },
+            {
+                "role": "user",
+                "content": "Доброе утро. Дай мне рекомендации на сегодня для энергии и хорошего пищеварения."
+            }
         ]
     )
 
-    reply = response.choices[0].message["content"]
+    reply = response.choices[0].message.content
     await update.message.reply_text(reply)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -76,7 +81,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
        
 # Запуск приложения
 app = ApplicationBuilder().token(os.environ["BOT_TOKEN"]).build()
-openai.api_key = os.environ["OPENAI_API_KEY"]
+openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 app.run_polling()

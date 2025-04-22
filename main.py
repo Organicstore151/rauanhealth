@@ -62,6 +62,6 @@ async def morning(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Запуск приложения
 app = ApplicationBuilder().token(os.environ["BOT_TOKEN"]).build()
 app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("утро", morning))
+app.add_handler(CommandHandler("morning", morning))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 app.run_polling()

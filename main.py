@@ -7,6 +7,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Con
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from telegram import ReplyKeyboardMarkup, KeyboardButton
+openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 # Google Sheets подключение
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -17,10 +18,13 @@ sheet = client.open_by_url(os.environ["SPREADSHEET_URL"]).sheet1
 
 # /start команда
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[KeyboardButton("🌅 Утро")]]
+    keyboard = [
+        [KeyboardButton("🌅 Утро")],
+        [KeyboardButton("📝 Отчёт по здоровью")]
+    ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     await update.message.reply_text(
-        "Привет! Пиши данные за день (вода, питание и т.д.) или нажми кнопку 👇",
+        "Привет! Выбери действие или пиши данные вручную:",
         reply_markup=reply_markup
     )
 # Обработка обычных сообщений
@@ -81,6 +85,21 @@ async def morning(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.lower()
 
+    if "отчёт по здоровью" in text or "отчет по здоровью" in text:
+        await update.message.reply_text(
+            "📝 Вот шаблон для отчёта. Просто дополни и отправь:\n\n"
+            "Завтрак: ...\n"
+            "Обед: ...\n"
+            "Ужин: ...\n"
+            "Перекусы: ...\n"
+            "Сладкое / напитки: ...\n"
+            "Вода: ...\n"
+            "Стул: ...\n"
+            "Движение: ...\n"
+            "Настроение: ...\n"
+        )
+        return
+
     if "утро" in text or "morning" in text:
         await morning(update, context)
         return
@@ -115,7 +134,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
        
 # Запуск приложения
 app = ApplicationBuilder().token(os.environ["BOT_TOKEN"]).build()
-openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 app.run_polling()

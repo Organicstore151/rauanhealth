@@ -18,10 +18,11 @@ sheet = client.open_by_url(os.environ["SPREADSHEET_URL"]).sheet1
 
 # /start команда
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [KeyboardButton("🌅 Утро")],
-        [KeyboardButton("📝 Отчёт по здоровью")]
-    ]
+   keyboard = [
+    [KeyboardButton("🌅 Утро")],
+    [KeyboardButton("📝 Отчёт по здоровью")],
+    [KeyboardButton("📈 Прогресс недели")]
+]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     await update.message.reply_text(
         "Привет! Выбери действие или пиши данные вручную:",
@@ -80,10 +81,90 @@ async def morning(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply = response.choices[0].message.content
     await update.message.reply_text(reply)
 
+async def weekly_progress(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("📊 Анализирую твою неделю...")
+
+    data = sheet.get_all_values()
+    headers = data[0]
+    rows = data[-7:] if len(data) > 7 else data[1:]
+
+    water_list = []
+    stool_days = 0
+    mood_list = []
+    activity_days = 0
+    meals = []
+
+    for row in rows:
+        water = row[2].replace(",", ".").strip()
+        stool = row[1].strip().lower()
+        movement = row[3].strip()
+        mood = row[9].strip()
+
+        try:
+            water_list.append(float(water))
+        except:
+            pass
+
+        if "да" in stool or "был" in stool:
+            stool_days += 1
+
+        if movement:
+            activity_days += 1
+
+        try:
+            mood_list.append(int(mood))
+        except:
+            pass
+
+        meals.append("🍽️ Завтрак: " + row[4])
+        meals.append("🍲 Обед: " + row[5])
+        meals.append("🌙 Ужин: " + row[6])
+        meals.append("🥜 Перекусы: " + row[7])
+        meals.append("☕ Сладкое / напитки: " + row[8])
+        meals.append("")
+
+    meal_text = "\n".join(meals)
+
+    summary = f"""Статистика за неделю:
+- 💧 Вода: {round(sum(water_list)/len(water_list), 2) if water_list else 'нет данных'} л/день
+- 🚽 Стул: {stool_days} дней из 7
+- 🤸 Движение: {activity_days} дней
+- 🙂 Настроение: {round(sum(mood_list)/len(mood_list), 1) if mood_list else 'нет данных'} / 10
+
+Питание по дням:
+{meal_text}
+"""
+
+    await update.message.reply_text(summary)
+
+    # GPT-рекомендации
+    response = openai_client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "Ты — заботливый бот-диетолог. На основе данных по воде, стулу, активности, настроению и питанию за неделю — "
+                    "дай 3–5 персональных рекомендаций. Пиши дружелюбно, конкретно, с эмодзи."
+                )
+            },
+            {
+                "role": "user",
+                "content": f"Вот мои данные за неделю:\n{summary}\nЧто ты можешь мне порекомендовать?"
+            }
+        ]
+    )
+
+    reply = response.choices[0].message.content
+    await update.message.reply_text("💡 Рекомендации:\n" + reply)
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.lower()
+
+    if "прогресс недели" in text:
+        await weekly_progress(update, context)
+        return
 
     if "отчёт по здоровью" in text or "отчет по здоровью" in text:
         await update.message.reply_text(

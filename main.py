@@ -23,8 +23,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     [KeyboardButton("📝 Отчёт по здоровью")],
     [KeyboardButton("📈 Прогресс недели")]
 ]
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    await update.message.reply_text(
+   reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+   await update.message.reply_text(
         "Привет! Выбери действие или пиши данные вручную:",
         reply_markup=reply_markup
     )

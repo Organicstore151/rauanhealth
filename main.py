@@ -24,8 +24,33 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 # Обработка обычных сообщений
+from datetime import datetime
+
+AIP_BREAKFASTS = {
+    0: "Тунец (70 г), гречка (220 г), авокадо (40 г), оливковое масло (1 ст.л.)",
+    1: "Куриное филе (70 г), яйцо (1 шт.), брокколи (100 г), цветная капуста (100 г), амарантовые макароны (220 г)",
+    2: "Судак тушёный (70 г), пшено (220 г), салат из огурца и авокадо (50 г), оливковое масло (1 ст.л.)",
+    3: "Сёмга (80 г), бурый и дикий рис (220 г), салат: огурец, листовой салат, грецкий орех (20 г)",
+    4: "Омлет из 3 яиц с растительным молоком, киноа (220 г), салат из огурца, авокадо и салата",
+    5: "Салат с сёмгой, айсберг, огурец, авокадо, кедровые орешки (10 г), пшено (220 г), оливковое масло (1 ст.л.)",
+    6: "Яйца (2 шт.), тушёные овощи (кабачок, брокколи, цветная капуста), бурый рис (220 г), тыква запечённая (100 г)"
+}
+
+DAY_NAMES = {
+    0: "понедельник",
+    1: "вторник",
+    2: "среда",
+    3: "четверг",
+    4: "пятница",
+    5: "суббота",
+    6: "воскресенье"
+}
 async def morning(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("⏳ Думаю над рекомендациями...")
+    await update.message.reply_text("⏳ Подбираю рекомендации...")
+
+    day_idx = datetime.now().weekday()
+    day_name = DAY_NAMES[day_idx]
+    aip_breakfast = AIP_BREAKFASTS[day_idx]
 
     response = openai_client.chat.completions.create(
         model="gpt-3.5-turbo",
@@ -33,26 +58,24 @@ async def morning(update: Update, context: ContextTypes.DEFAULT_TYPE):
             {
                 "role": "system",
                 "content": (
-    "You are a friendly and knowledgeable health assistant helping a person who follows the Autoimmune Protocol (AIP). "
-    "This person avoids sugar, gluten, dairy, legumes, grains, nuts, and nightshades. Meals should strictly comply with AIP. "
-    "They eat 4 times a day and aim for around 2400 kcal daily, with breakfast around 600 kcal. "
-    "They suffer from constipation, so your recommendations should help gently stimulate digestion and bowel movement naturally. "
-    "They take medications in the morning and do light exercises for the spine and back. "
-    "Each morning, give them a short and clear step-by-step plan (1, 2, 3...) using friendly tone and emojis. "
-    "Include a specific AIP-compliant breakfast idea with estimated calories, hydration tip, exercise suggestions for the back, and a reminder to take medicine. "
-    "Be encouraging, keep answers fresh and varied every day, and finish with kind motivation."
-)
-
+                    "You are a friendly assistant helping a person who follows the Autoimmune Protocol (AIP). "
+                    "They eat 4 times a day (~2400 kcal total), ~600 kcal for breakfast. They avoid gluten, dairy, sugar, nightshades, legumes. "
+                    "They suffer from constipation, take medicine in the morning, and do back/spine exercises. "
+                    f"Today is {day_name}. Use this breakfast example in your response: {aip_breakfast}. "
+                    "Give a step-by-step morning plan (1, 2, 3...), including: hydration, medicine, breakfast, back exercises. "
+                    "Be clear, warm, use emojis, and finish with motivation."
+                )
             },
             {
                 "role": "user",
-                "content": "Доброе утро! Дай мне рекомендации на сегодня для энергии, пищеварения и поддержания спины."
+                "content": "Доброе утро. Дай мне рекомендации на сегодня для энергии, пищеварения и спины."
             }
         ]
     )
 
     reply = response.choices[0].message.content
     await update.message.reply_text(reply)
+
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
